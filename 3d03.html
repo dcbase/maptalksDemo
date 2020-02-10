@@ -15,7 +15,7 @@
 </div>
 </body>
 
-<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<script src="https://cdn.bootcss.com/vue/2.5.21/vue.min.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.min.css">
 <script src="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.min.js"></script>
 <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
@@ -35,6 +35,7 @@
         },
         mounted() {
             this.initMapTalk();
+            this.drawWall()
             this.drawRegion()
         },
         methods: {
@@ -44,10 +45,26 @@
                 this.mapDom = new maptalks.Map('mapDom', {
                     center: self.center,
                     zoom: 11,
+                    pitch: 30, // y方向倾斜角度
                     baseLayer: new maptalks.TileLayer('base', {
                         urlTemplate: url
                     })
                 });
+            },
+            drawBorderLines(coordinates, properties) {
+                const outLine = new maptalks.MultiLineString(coordinates, {
+                    symbol: {
+                        lineColor: edgeColor,
+                        lineWidth: 1,
+                        textPlacement: "vertex"
+                    },
+                    properties: {
+                        altitude: altitude,
+                        id: properties.id,
+                        properties: properties
+                    }
+                });
+                this.limitLines.push(outLine);
             },
             drawPolygons(idx, coordinates, properties) {
                 const polygon = new maptalks.MultiPolygon(coordinates, {
@@ -61,7 +78,7 @@
                     properties: {
                         altitude: altitude,
                         id: properties.id,
-                    name: properties.name,
+                        name: properties.name,
                         index: idx,
                         properties: properties
                     }
@@ -77,8 +94,7 @@
                         });
                     })
 
-                let areaName = properties.name //区域名称
-                const label = new maptalks.Label(areaName,
+                const label = new maptalks.Label(properties.name,
                     properties.center,
                     {
                         'draggable' : true,
@@ -89,7 +105,7 @@
                             'textWeight' : 'bold',
                             'textVerticalAlignment' : 'center'
                         },
-                        zIndex:11  //设置图层层级，值越大则层级越高
+                        zIndex:11
                     });
                 this.polygons.push(polygon);
                 this.polygons.push(label);
@@ -108,6 +124,28 @@
                         self.polygons,
                         {
                             enableAltitude: true
+                        }
+                    ).addTo(self.mapDom);
+                })
+
+            },
+            drawWall() {
+                const self = this
+                $.getJSON("./json/meishanBorder.json", "", function(mapData) {
+                    const borderFeatures = mapData.features[0]
+                    const properties = borderFeatures.properties;
+                    const pathCoordinates = borderFeatures.geometry.coordinates.map(d => { return d[0] })
+                    self.drawBorderLines(pathCoordinates, properties)
+                    const limitLinesLayer = new maptalks.VectorLayer(
+                        "vector-line",
+                        self.limitLines,
+                        {
+                            enableAltitude: true,
+                            drawAltitude: {
+                                polygonFill: edgeColor,
+                                polygonOpacity: 1,
+                                lineWidth: 0
+                            }
                         }
                     ).addTo(self.mapDom);
                 })

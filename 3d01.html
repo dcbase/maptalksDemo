@@ -55,13 +55,13 @@
                         lineWidth: 1,
                         lineColor: edgeColor,
                         polygonFill: polygonColors[0],
-                        polygonOpacity: 1,
+                        polygonOpacity: .8,
                         text:properties.name
                     },
                     properties: {
                         altitude: altitude,
                         id: properties.id,
-                    name: properties.name,
+                        name: properties.name,
                         index: idx,
                         properties: properties
                     }
@@ -76,7 +76,6 @@
                             polygonFill: polygonColors[0]
                         });
                     })
-
                 let areaName = properties.name //区域名称
                 const label = new maptalks.Label(areaName,
                     properties.center,
