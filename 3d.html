@@ -35,7 +35,6 @@
         },
         mounted() {
             this.initMapTalk();
-            //this.drawWall()
             this.drawRegion()
         },
         methods: {
@@ -45,26 +44,10 @@
                 this.mapDom = new maptalks.Map('mapDom', {
                     center: self.center,
                     zoom: 11,
-                    pitch: 30, // y方向倾斜角度
                     baseLayer: new maptalks.TileLayer('base', {
                         urlTemplate: url
                     })
                 });
-            },
-            drawBorderLines(coordinates, properties) {
-                const outLine = new maptalks.MultiLineString(coordinates, {
-                    symbol: {
-                        lineColor: edgeColor,
-                        lineWidth: 1,
-                        textPlacement: "vertex"
-                    },
-                    properties: {
-                        altitude: altitude,
-                        id: properties.id,
-                        properties: properties
-                    }
-                });
-                this.limitLines.push(outLine);
             },
             drawPolygons(idx, coordinates, properties) {
                 const polygon = new maptalks.MultiPolygon(coordinates, {
@@ -109,27 +92,6 @@
                         self.polygons,
                         {
                             enableAltitude: true
-                        }
-                    ).addTo(self.mapDom);
-                })
-            },
-            drawWall() {
-                const self = this
-                $.getJSON("./json/meishanBorder.json", "", function(mapData) {
-                    const borderFeatures = mapData.features[0]
-                    const properties = borderFeatures.properties;
-                    const pathCoordinates = borderFeatures.geometry.coordinates.map(d => { return d[0] })
-                    self.drawBorderLines(pathCoordinates, properties)
-                    const limitLinesLayer = new maptalks.VectorLayer(
-                        "vector-line",
-                        self.limitLines,
-                        {
-                            enableAltitude: true,
-                            drawAltitude: {
-                                polygonFill: edgeColor,
-                                polygonOpacity: 1,
-                                lineWidth: 0
-                            }
                         }
                     ).addTo(self.mapDom);
                 })
