@@ -1,0 +1,141 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>地图</title>
+    <style>
+        html,body,#app,#mapDom{padding:0px;margin:0px;width:100%;height:100%;}
+    </style>
+</head>
+
+<body>
+<div id="app">
+    <div id="mapDom"></div>
+</div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.min.css">
+<script src="https://cdn.jsdelivr.net/npm/maptalks/dist/maptalks.min.js"></script>
+<script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+<script>
+    const edgeColor	= '#4682B4'
+    const polygonColors = ["#C0C0C0", "#87CEFA"];
+    const altitude = 3000;
+
+    let vm = new Vue({
+        el: '#app',
+        data() {
+            return {
+                center: [104.0647600000, 30.2702000000],
+                polygons: [],
+                limitLines: []
+            };
+        },
+        mounted() {
+            this.initMapTalk();
+            //this.drawWall()
+            this.drawRegion()
+        },
+        methods: {
+            initMapTalk() {
+                const self = this;
+                const url = 'http://mt3.google.cn/vt/lyrs=t@132,r@248000000&hl=zh-CN&gl=cn&x={x}&y={y}&z={z}&s='
+                this.mapDom = new maptalks.Map('mapDom', {
+                    center: self.center,
+                    zoom: 11,
+                    pitch: 30, // y方向倾斜角度
+                    baseLayer: new maptalks.TileLayer('base', {
+                        urlTemplate: url
+                    })
+                });
+            },
+            drawBorderLines(coordinates, properties) {
+                const outLine = new maptalks.MultiLineString(coordinates, {
+                    symbol: {
+                        lineColor: edgeColor,
+                        lineWidth: 1,
+                        textPlacement: "vertex"
+                    },
+                    properties: {
+                        altitude: altitude,
+                        id: properties.id,
+                        properties: properties
+                    }
+                });
+                this.limitLines.push(outLine);
+            },
+            drawPolygons(idx, coordinates, properties) {
+                const polygon = new maptalks.MultiPolygon(coordinates, {
+                    symbol: {
+                        lineWidth: 1,
+                        lineColor: edgeColor,
+                        polygonFill: polygonColors[0],
+                        polygonOpacity: 1,
+                        text:properties.name
+                    },
+                    properties: {
+                        altitude: altitude,
+                        id: properties.id,
+                        name: properties.name,
+                        index: idx,
+                        properties: properties
+                    }
+                })
+                    .on("mouseenter", function(e) {
+                        e.target.updateSymbol({
+                            polygonFill: polygonColors[1]
+                        });
+                    })
+                    .on("mouseout", function(e) {
+                        e.target.updateSymbol({
+                            polygonFill: polygonColors[0]
+                        });
+                    })
+                this.polygons.push(polygon);
+            },
+            drawRegion() {
+                const self = this
+                $.getJSON("./json/meishan.json", "", function(mapData) {
+                    const features = mapData.features;
+                    features.forEach((g, i) => {
+                        const properties = g.properties;
+                        const coordinates = g.geometry.coordinates
+                        self.drawPolygons(i, coordinates, properties)
+                    });
+                    const polygonsLayer = new maptalks.VectorLayer(
+                        "vector-polygon",
+                        self.polygons,
+                        {
+                            enableAltitude: true
+                        }
+                    ).addTo(self.mapDom);
+                })
+            },
+            drawWall() {
+                const self = this
+                $.getJSON("./json/meishanBorder.json", "", function(mapData) {
+                    const borderFeatures = mapData.features[0]
+                    const properties = borderFeatures.properties;
+                    const pathCoordinates = borderFeatures.geometry.coordinates.map(d => { return d[0] })
+                    self.drawBorderLines(pathCoordinates, properties)
+                    const limitLinesLayer = new maptalks.VectorLayer(
+                        "vector-line",
+                        self.limitLines,
+                        {
+                            enableAltitude: true,
+                            drawAltitude: {
+                                polygonFill: edgeColor,
+                                polygonOpacity: 1,
+                                lineWidth: 0
+                            }
+                        }
+                    ).addTo(self.mapDom);
+                })
+            }
+        },
+    })
+</script>
+
+</html>
