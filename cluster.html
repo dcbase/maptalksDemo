@@ -35,8 +35,9 @@
 
     // mark点击弹框
     function onClick(e) {
+        console.log(e.target)
         e.target.setInfoWindow({
-            'title'     : 'Marker\'s InfoWindow',
+            'title'     : 'Marker\'s InfoWindow'+e.target.properties.name,
             'content'   : 'Click on marker to open.',
             'dy': 5,
             'autoPan': true,
@@ -65,8 +66,13 @@
     for (let i = 0; i < addressPoints.length; i++) {
         let a = addressPoints[i]
         markers.push(new maptalks.Marker([a[0], a[1]], {
+            'properties': {
+                'name': a[2]
+            },
             'symbol': [
                 {
+                    'textName' : '{name}',
+                    'textOpacity': 0,
                     'markerType': 'ellipse',
                     'markerWidth': 20,
                     'markerHeight': 20,
